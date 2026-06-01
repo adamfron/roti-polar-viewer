@@ -62,6 +62,109 @@ Smoothing can be disabled or applied lightly/medium over MLT as a circular serie
 
 > The detected boundary is a ROTI-based proxy of the high-latitude ionospheric irregularity belt. It should not be interpreted as an optical auroral oval boundary.
 
+
+## ROTI and oval proxy formulas
+
+### ROT
+
+For one satellite-receiver arc:
+
+```latex
+ROT_i^k = \frac{TEC_i^k - TEC_i^{k-1}}{t_k - t_{k-1}}
+```
+
+ROT is the rate of TEC change, usually expressed in TECU/min.
+
+### ROTI
+
+```latex
+ROTI = \sqrt{\langle ROT^2 \rangle - \langle ROT \rangle^2}
+```
+
+ROTI is the standard deviation of ROT over a short time window, commonly 5 minutes in the IGS ROTI map product context.
+
+Important: this web viewer does not recompute ROTI from raw GNSS observations. It reads and visualizes already prepared ROTI map files.
+
+### Grid notation
+
+```latex
+R(\phi_i, \tau_j)
+```
+
+where:
+
+- `R` is the ROTI value,
+- `phi_i` is corrected magnetic latitude / MLAT,
+- `tau_j` is magnetic local time / MLT.
+
+### Threshold method
+
+```latex
+A_{ij} =
+\begin{cases}
+1, & R(\phi_i,\tau_j) \geq T \\
+0, & R(\phi_i,\tau_j) < T
+\end{cases}
+```
+
+For each MLT sector:
+
+```latex
+\phi_{eq}(\tau_j) = \min \{ \phi_i : A_{ij}=1 \}
+```
+
+```latex
+\phi_{pol}(\tau_j) = \max \{ \phi_i : A_{ij}=1 \}
+```
+
+```latex
+\phi_{ridge}(\tau_j) = \arg\max_{\phi_i} R(\phi_i,\tau_j)
+```
+
+This estimates the equatorward boundary, poleward boundary and maximum-activity ridge of a ROTI-active belt.
+
+### Gradient method
+
+MLAT samples are sorted from lower latitude to higher latitude. Finite differences are used:
+
+```latex
+G_{ij} = \frac{R(\phi_{i+1},\tau_j)-R(\phi_{i-1},\tau_j)}
+{\phi_{i+1}-\phi_{i-1}}
+```
+
+Then for each MLT sector:
+
+- the equatorward edge is associated with the strongest positive gradient before or near the active region;
+- the ridge is the maximum ROTI latitude;
+- the poleward edge is associated with the strongest negative gradient poleward of the ridge.
+
+### Hybrid method
+
+The hybrid method combines thresholding and gradient-based edge detection:
+
+- require sufficient ROTI intensity,
+- use thresholding to identify the active belt,
+- use gradients to refine the boundaries,
+- reject weak/noisy sectors,
+- assign a confidence value.
+
+A simple quick-look confidence score is represented as:
+
+```latex
+C_j = w_s S_j + w_g G_j + w_c K_j
+```
+
+where:
+
+- `S_j` is normalized signal strength,
+- `G_j` is normalized edge/gradient contrast,
+- `K_j` is neighborhood continuity in MLT,
+- weights sum to 1.
+
+This is not a formally validated scientific model. It is a quick-look proxy intended to make ROTI irregularity belts easier to inspect, compare, and export.
+
+> The detected boundary is a ROTI-based proxy of the high-latitude ionospheric irregularity belt. It should not be interpreted as an optical auroral oval boundary.
+
 ## Statistics and sectors
 
 After loading a file, the app reports metadata, value statistics (min, max, mean, median, p90, p95, p99), active cells above the selected threshold, and activity percentage. It also summarizes four MLT sectors:
@@ -79,7 +182,7 @@ Available exports include:
 - compact report PNG
 - statistics and settings JSON
 - cell grid CSV with `date,doy,section,mlat,mlt_hour,mlt_deg,roti`
-- oval proxy CSV with `date,doy,section,method,threshold,smoothing,mlt_hour,equatorward_mlat,ridge_mlat,poleward_mlat,max_roti,confidence`
+- oval proxy CSV with `date,doy,section,method,threshold,smoothing,mlt_hour,equatorward_mlat,ridge_mlat,poleward_mlat,max_roti,confidence,displayed`
 
 ## Warnings and validation
 
@@ -88,11 +191,24 @@ The UI displays non-blocking warnings for likely issues such as filename/header 
 ## Limitations and caveats
 
 - This is a quick-look visualization and comparison tool, not authoritative scientific reprocessing.
-- ROTI shows variability/fluctuation activity, not absolute TEC.
+- ROTI describes variability/fluctuation activity, not absolute TEC.
+- High TEC does not necessarily imply high ROTI.
+- High ROTI can occur where TEC changes rapidly or irregularities are present.
+- The tool is intended for quick-look visualization, comparison and export, not authoritative scientific reprocessing.
 - Coordinates are corrected magnetic latitude and magnetic local time, not geographic coordinates.
 - A daily ROTI polar map is not a single instantaneous global snapshot.
-- The oval overlay is a ROTI-based irregularity proxy and must not be interpreted as a physical optical auroral oval boundary.
+- The detected boundary is a ROTI-based proxy of the high-latitude ionospheric irregularity belt. It should not be interpreted as an optical auroral oval boundary.
 - Southern hemisphere and equatorial sections are represented in the internal model for later extension, but the MVP focuses on the classic northern hemisphere `ROTIPOLARMAP` section.
+
+
+## Development notes
+
+- Theme handling keeps `Auto`, `Light`, and `Dark` as user-facing modes. `Auto` follows `prefers-color-scheme`, while the selected mode is stored in `localStorage`.
+- The polar layout reserves explicit margins for MLT labels and the right-side colorbar before computing the final plot radius, so heatmap cells, labels, and colorbar text do not occupy the same space at common desktop sizes.
+- Oval smoothing is circular in MLT. The first and last MLT sectors are neighbors, light smoothing uses a short robust window, and medium smoothing uses a wider robust window.
+- Smoothing uses a median-then-weighted-mean approach and ignores missing values. Small 1-2 sector gaps may be bridged when neighboring sectors are reliable; larger gaps remain missing.
+- Raw boundary arrays and smoothed/display arrays are preserved separately so exports can distinguish detection output from the visual overlay.
+- The oval proxy intentionally remains a ROTI irregularity-belt proxy: the formula choices favor transparent quick-look behavior over a claimed physical auroral boundary model.
 
 ## Development
 

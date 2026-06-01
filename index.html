@@ -10,17 +10,19 @@
   <div class="app-shell">
     <header class="toolbar">
       <div class="brand"><h1>ROTI Polar Map Viewer</h1><p>Local quick-look viewer for IGS-style corrected MLAT / MLT ROTI maps</p></div>
-      <label class="file-button">Load ROTI file<input id="fileInput" type="file" accept=".inx,.INX,.gz,.f"></label>
+      <label class="file-button" title="Load a local ROTI .INX or .INX.gz file." aria-label="Load ROTI file">Load ROTI file<input id="fileInput" type="file" accept=".inx,.INX,.gz,.f"></label>
       <span id="fileName" class="file-name">No file selected</span>
-      <label>Section<select id="sectionSelect"><option>NH</option><option disabled>SH</option><option disabled>EQ</option></select></label>
-      <label>Scale<select id="scaleSelect"><option value="igs">IGS 0–1</option><option value="extended">Extended 0–2</option><option value="adaptive">Adaptive p99</option></select></label>
-      <label>Threshold<select id="thresholdSelect"><option value="0.2">0.2</option><option value="0.5" selected>0.5</option><option value="0.8">0.8</option><option value="custom">custom</option></select></label>
-      <input id="customThreshold" class="mini-input" type="number" value="0.5" step="0.05" min="0" hidden>
-      <label>Oval<select id="methodSelect"><option value="hybrid" selected>Hybrid</option><option value="threshold">Threshold</option><option value="ridge">Ridge</option><option value="gradient">Gradient</option></select></label>
-      <label>Smooth<select id="smoothSelect"><option value="light" selected>light</option><option value="none">none</option><option value="medium">medium</option></select></label>
-      <button id="savePngBtn">Save map PNG</button>
-      <button id="exportBundleBtn">Export JSON/CSV</button>
-      <button id="aboutBtn">About</button>
+      <label title="Choose the ROTI polar-map section to display." aria-label="Section">Section<select id="sectionSelect"><option>NH</option><option disabled>SH</option><option disabled>EQ</option></select></label>
+      <label title="Color scale used for ROTI heatmap values." aria-label="Scale">Scale<select id="scaleSelect"><option value="igs">IGS 0–1</option><option value="extended">Extended 0–2</option><option value="adaptive">Adaptive p99</option></select></label>
+      <label title="ROTI value used to classify active cells and estimate the proxy boundary." aria-label="Threshold">Threshold<select id="thresholdSelect"><option value="0.2">0.2</option><option value="0.5" selected>0.5</option><option value="0.8">0.8</option><option value="custom">custom</option></select></label>
+      <input id="customThreshold" class="mini-input" type="number" value="0.5" step="0.05" min="0" hidden title="Custom ROTI threshold." aria-label="Custom threshold">
+      <label title="ROTI-based irregularity belt proxy method; not an optical auroral oval boundary." aria-label="Oval method">Oval<select id="methodSelect"><option value="hybrid" selected>Hybrid</option><option value="threshold">Threshold</option><option value="ridge">Ridge</option><option value="gradient">Gradient</option></select></label>
+      <label title="Circular smoothing of detected boundary points along magnetic local time." aria-label="Smoothing">Smooth<select id="smoothSelect"><option value="light" selected>light</option><option value="none">none</option><option value="medium">medium</option></select></label>
+      <label class="toggle" title="Show or hide the ROTI-based oval proxy overlay." aria-label="Show oval proxy"><input id="showOvalToggle" type="checkbox" checked> Show oval proxy</label>
+      <label title="Theme follows system preference in Auto, or can be fixed." aria-label="Theme switch">Theme<select id="themeSelect"><option value="auto">Auto</option><option value="light">Light</option><option value="dark">Dark</option></select></label>
+      <button id="savePngBtn" title="Save the current map canvas as a PNG." aria-label="Save map PNG">Save map PNG</button>
+      <button id="exportBundleBtn" title="Export statistics JSON, cell CSV, and oval CSV." aria-label="Export JSON/CSV">Export JSON/CSV</button>
+      <button id="aboutBtn" title="Open sources, coordinates, and limitations." aria-label="About">About</button>
     </header>
 
     <main class="content">
@@ -35,23 +37,34 @@
         <section class="card"><h2>File metadata</h2><div id="metadataGrid" class="kv-grid muted">Load a ROTI .INX or .INX.gz file to begin.</div></section>
         <section class="card"><h2>Value statistics</h2><div id="statsGrid" class="kv-grid"></div></section>
         <section class="card"><h2>MLT sector summary</h2><div id="sectorSummary" class="sector-list"></div></section>
-        <section class="card"><h2>Oval proxy</h2><p class="note">ROTI-based irregularity belt proxy — not an optical auroral boundary.</p><div class="legend"><span class="fill"></span> proxy fill <span class="dash"></span> boundaries <span class="solid"></span> ridge</div><div id="ovalSummary" class="kv-grid"></div></section>
-        <section class="card export-card"><h2>Export</h2><button id="saveMapBtn">Save map PNG</button><button id="saveReportBtn">Save report PNG</button><button id="jsonBtn">Statistics JSON</button><button id="cellsBtn">Cell grid CSV</button><button id="ovalBtn">Oval CSV</button></section>
+        <section id="ovalCard" class="card"><h2 title="ROTI-based irregularity belt proxy; not an optical auroral oval boundary.">Oval proxy</h2><p class="note">ROTI-based irregularity belt proxy — not an optical auroral boundary.</p><div class="legend"><span class="fill" title="Proxy fill"></span> proxy fill <span class="dash" title="Equatorward and poleward boundaries"></span> boundaries <span class="solid" title="Maximum-activity ridge"></span> ridge</div><div id="ovalSummary" class="kv-grid"></div></section>
+        <section class="card export-card"><h2>Export</h2><button id="saveMapBtn" title="Save the current map canvas as a PNG.">Save map PNG</button><button id="saveReportBtn" title="Save map plus compact side report as PNG.">Save report PNG</button><button id="jsonBtn" title="Export metadata, settings, statistics, warnings, and oval arrays.">Statistics JSON</button><button id="cellsBtn" title="Export all ROTI grid cells as CSV.">Cell grid CSV</button><button id="ovalBtn" title="Export displayed oval proxy sectors as CSV.">Oval CSV</button></section>
       </aside>
     </main>
 
-    <footer class="source-bar">
-      <button data-source>IGS ROTI maps product</button><button data-source>Cherniak et al. 2018</button><button data-source>Cherniak et al. 2022</button><button data-source>CDDIS / IGS</button><button data-source>About coordinates and limitations</button>
+    <footer class="source-bar" aria-label="Sources">
+      <a href="https://igs.org/wg/ionosphere/" target="_blank" rel="noopener noreferrer" title="IGS Ionosphere Working Group ROTI maps product">IGS ROTI maps product</a>
+      <a href="https://doi.org/10.1007/s10291-018-0730-1" target="_blank" rel="noopener noreferrer" title="ROTI Maps: a new IGS ionospheric product characterizing irregularities occurrence">Cherniak et al. 2018</a>
+      <a href="https://doi.org/10.3390/s22103748" target="_blank" rel="noopener noreferrer" title="IGS ROTI Maps: Current Status and extension">Cherniak et al. 2022</a>
+      <a href="https://www.earthdata.nasa.gov/data/catalog/cddis-gnss-igs-dly-ion-tec-grd-fluc-1" target="_blank" rel="noopener noreferrer" title="NASA Earthdata / CDDIS product page">NASA Earthdata / CDDIS</a>
+      <button id="footerAboutBtn" title="Open coordinate and limitation notes">Coordinates and limitations</button>
     </footer>
   </div>
 
   <dialog id="aboutDialog">
-    <form method="dialog"><button class="modal-close">×</button></form>
+    <form method="dialog"><button class="modal-close" aria-label="Close about dialog">×</button></form>
     <h2>About ROTI Polar Map Viewer</h2>
     <p>This static app reads selected files locally in your browser. Files are not uploaded to a server.</p>
-    <p>The map uses corrected magnetic latitude and magnetic local time. ROTI shows TEC fluctuation activity, not absolute TEC.</p>
+    <p>The map uses corrected magnetic latitude and magnetic local time, not geographic coordinates. ROTI shows TEC fluctuation activity, not absolute TEC, and a daily ROTI polar map is not a single instantaneous UTC snapshot.</p>
     <p><strong>Caveat:</strong> The detected boundary is a ROTI-based proxy of the high-latitude ionospheric irregularity belt. It should not be interpreted as an optical auroral oval boundary.</p>
-    <p>Source labels are placeholders for IGS/CDDIS and Cherniak ROTI product references until exact project URLs are configured.</p>
+    <h3>Sources</h3>
+    <ul class="sources">
+      <li><a href="https://igs.org/wg/ionosphere/" target="_blank" rel="noopener noreferrer">IGS ROTI maps product</a> — IGS Ionosphere Working Group.</li>
+      <li><a href="https://doi.org/10.1007/s10291-018-0730-1" target="_blank" rel="noopener noreferrer">Cherniak et al. 2018</a>, “ROTI Maps: a new IGS ionospheric product characterizing the ionospheric irregularities occurrence,” <em>GPS Solutions</em>.</li>
+      <li><a href="https://doi.org/10.3390/s22103748" target="_blank" rel="noopener noreferrer">Cherniak et al. 2022</a>, “IGS ROTI Maps: Current Status and Its Extension towards Equatorial Region and Southern Hemisphere,” <em>Sensors</em>. Open page: <a href="https://www.mdpi.com/1424-8220/22/10/3748" target="_blank" rel="noopener noreferrer">MDPI</a>.</li>
+      <li><a href="https://www.earthdata.nasa.gov/data/catalog/cddis-gnss-igs-dly-ion-tec-grd-fluc-1" target="_blank" rel="noopener noreferrer">NASA Earthdata / CDDIS</a> product catalog page.</li>
+      <li><a href="README.md#roti-and-oval-proxy-formulas" target="_blank" rel="noopener noreferrer">Coordinates, formulas, and limitations</a> in the local README.</li>
+    </ul>
   </dialog>
 
   <script src="src/fflate.min.js"></script>
